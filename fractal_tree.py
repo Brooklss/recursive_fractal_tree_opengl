@@ -1,9 +1,8 @@
 """
-Recursive Fractal Tree — OpenGL + Matrix Stacks
-================================================
-Real-time interactive fractal tree rendered with PyOpenGL + pygame.
-A custom MatrixStack (push/pop) drives all recursive branch transformations
-without relying on the deprecated glPushMatrix/glPopMatrix API.
+Recursive Fractal Tree with Matrix Stacks
+==========================================
+Uses PyOpenGL + pygame to render an animated fractal tree.
+A custom MatrixStack (push/pop) drives the recursive branch transformations.
 
 Controls:
   UP / DOWN    — increase / decrease recursion depth (max 12)

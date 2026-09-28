@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Recursive Fractal Tree — Code Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060610;--surface:#0d0d1f;--card:#111128;--border:#1e1e40;
+  --accent1:#6c63ff;--accent2:#00d4aa;--accent3:#ff6b6b;--accent4:#ffd93d;
+  --green:#4ade80;--text:#e8e8f0;--muted:#7070a0;
+  --font-sans:'Inter',sans-serif;--font-mono:'JetBrains Mono',monospace;
+  --radius:16px;--ease:cubic-bezier(.77,0,.175,1);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-sans);user-select:none}
+#slider-track{display:flex;height:100vh;transition:transform .7s var(--ease);will-change:transform}
+.slide{width:100vw;height:100vh;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 60px;position:relative;overflow:hidden}
+.slide::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 55% 40% at 15% 20%,rgba(108,99,255,.12) 0%,transparent 70%),radial-gradient(ellipse 40% 50% at 85% 75%,rgba(0,212,170,.08) 0%,transparent 70%)}
+#progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent1),var(--accent2));transition:width .5s var(--ease);z-index:2000;box-shadow:0 0 10px var(--accent1)}
+#slide-badge{position:fixed;top:20px;right:28px;font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--muted);background:rgba(13,13,31,.7);border:1px solid var(--border);backdrop-filter:blur(10px);padding:6px 14px;border-radius:999px;z-index:1000}
+#kb-hint{position:fixed;top:20px;left:28px;font-size:12px;color:var(--muted);background:rgba(13,13,31,.7);border:1px solid var(--border);backdrop-filter:blur(10px);padding:6px 14px;border-radius:999px;z-index:1000}
+kbd{background:var(--border);border-radius:4px;padding:1px 6px;font-family:var(--font-mono);font-size:11px;color:var(--text)}
+#nav{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:16px;background:rgba(13,13,31,.85);border:1px solid var(--border);backdrop-filter:blur(20px);border-radius:999px;padding:10px 22px;z-index:1000;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.nav-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:20px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s}
+.nav-btn:hover{background:rgba(108,99,255,.2);color:var(--accent1)}
+.nav-btn:disabled{opacity:.25;cursor:default}
+#slide-counter{font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--muted);min-width:60px;text-align:center}
+#dots{display:flex;gap:7px;align-items:center}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);cursor:pointer;transition:background .3s,transform .3s}
+.dot.active{background:var(--accent1);transform:scale(1.5)}
+.slide-tag{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent1);margin-bottom:14px}
+.slide-title{font-size:clamp(2rem,4vw,3.4rem);font-weight:800;line-height:1.1;letter-spacing:-.02em;background:linear-gradient(135deg,#fff 30%,var(--muted));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:32px;width:100%;max-width:1200px;align-items:start}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;width:100%;max-width:1300px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(108,99,255,.06) 0%,transparent 60%)}
+.card-icon{font-size:2rem;margin-bottom:14px}
+.card-title{font-size:1.05rem;font-weight:700;margin-bottom:8px;color:var(--text)}
+.card-body{font-size:.88rem;color:var(--muted);line-height:1.7}
+.code-block{background:#0a0a1a;border:1px solid var(--border);border-radius:12px;font-family:var(--font-mono);font-size:.82rem;line-height:1.75;overflow:auto;max-height:65vh;text-align:left}
+.code-block pre{padding:24px 28px}
+.code-block::-webkit-scrollbar{width:6px}
+.code-block::-webkit-scrollbar-track{background:transparent}
+.code-block::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.kw{color:#c792ea}.fn{color:#82aaff}.str{color:#c3e88d}.num{color:#f78c6c}.cmt{color:#546e7a;font-style:italic}.cls{color:#ffcb6b}.op{color:#89ddff}.self-kw{color:#ff9580}.param{color:#80cbc4}
+.pill{display:inline-block;font-size:.75rem;font-weight:700;letter-spacing:.05em;padding:4px 12px;border-radius:999px;margin:3px}
+.pill-purple{background:rgba(108,99,255,.2);color:#a89fff;border:1px solid rgba(108,99,255,.3)}
+.pill-teal{background:rgba(0,212,170,.15);color:#00d4aa;border:1px solid rgba(0,212,170,.25)}
+.pill-red{background:rgba(255,107,107,.15);color:#ff9999;border:1px solid rgba(255,107,107,.25)}
+.pill-yellow{background:rgba(255,217,61,.12);color:#ffd93d;border:1px solid rgba(255,217,61,.2)}
+.pill-green{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+.section-label{font-size:.75rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--accent2);margin-bottom:8px}
+.bullet-list{list-style:none;display:flex;flex-direction:column;gap:10px;font-size:.9rem;color:var(--muted)}
+.bullet-list li::before{content:'▸ ';color:var(--accent1);font-size:.75rem}
+.bullet-list li{padding-left:4px;line-height:1.6}
+.em{color:var(--text);font-weight:600}
+.flow-step{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:.8rem;text-align:center;font-weight:600}
+.swatch-row{display:flex;gap:0;height:28px;border-radius:8px;overflow:hidden;width:100%;margin-top:8px}
+.swatch{flex:1}
+.param-row{display:flex;align-items:center;gap:14px;font-size:.82rem;color:var(--muted);margin-bottom:10px}
+.param-row label{width:120px;flex-shrink:0;font-weight:600;color:var(--text)}
+.param-row input[type=range]{flex:1;accent-color:var(--accent1);cursor:pointer}
+.param-val{width:46px;text-align:right;font-family:var(--font-mono);color:var(--accent2)}
+.hero-title{font-size:clamp(2.5rem,6vw,5rem);font-weight:800;letter-spacing:-.04em;line-height:1.05;background:linear-gradient(135deg,#fff 0%,var(--accent1) 45%,var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tech-badge{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:8px 20px;font-size:.82rem;font-weight:600;color:var(--text)}
+.tech-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+@media(max-width:900px){.two-col,.three-col{grid-template-columns:1fr}.slide{padding:24px 20px}}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<div id="slide-badge">01 / 10</div>
+<div id="kb-hint"><kbd>←</kbd> <kbd>→</kbd> to navigate</div>
+
+<div id="slider-track">
+
+<!-- SLIDE 1 — HERO -->
+<div class="slide" id="slide-1">
+  <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.3"></canvas>
+  <div style="text-align:center;z-index:1;position:relative">
+    <div class="slide-tag">🌿 Code Walkthrough — 10 slides</div>
+    <div class="hero-title">Recursive<br>Fractal Tree</div>
+    <p style="font-size:clamp(.95rem,1.6vw,1.25rem);color:var(--muted);margin-top:20px;max-width:600px;line-height:1.7">
+      A deep-dive into building an animated, interactive fractal tree using
+      <strong>Python · PyOpenGL · pygame</strong> and a hand-rolled
+      <strong>MatrixStack</strong> — no external graphics math library needed.
+    </p>
+    <div style="margin-top:28px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div class="tech-badge"><div class="tech-dot" style="background:#4ade80"></div>Python 3</div>
+      <div class="tech-badge"><div class="tech-dot" style="background:#6c63ff"></div>PyOpenGL</div>
+      <div class="tech-badge"><div class="tech-dot" style="background:#00d4aa"></div>pygame</div>
+      <div class="tech-badge"><div class="tech-dot" style="background:#ffd93d"></div>NumPy</div>
+      <div class="tech-badge"><div class="tech-dot" style="background:#ff6b6b"></div>Recursion</div>
+    </div>
+    <div style="margin-top:40px;font-size:.8rem;color:var(--muted)">Press <kbd>→</kbd> or click the arrow below to begin</div>
+  </div>
+</div>
+
+<!-- SLIDE 2 — LIVE DEMO -->
+<div class="slide" id="slide-2">
+  <div class="two-col" style="max-width:1300px;align-items:center">
+    <div>
+      <div class="slide-tag">🎮 Live Demo</div>
+      <div class="slide-title" style="font-size:clamp(1.6rem,3vw,2.5rem)">See it in action</div>
+      <p style="color:var(--muted);margin-top:12px;font-size:.9rem;line-height:1.7">A real-time Canvas recreation of what the Python + OpenGL program renders. Drag the sliders to see how each parameter shapes the tree.</p>
+      <div style="margin-top:24px">
+        <div class="param-row"><label>Depth</label><input type="range" id="p-depth" min="1" max="12" value="8"><span class="param-val" id="v-depth">8</span></div>
+        <div class="param-row"><label>Angle (°)</label><input type="range" id="p-angle" min="1" max="89" value="25"><span class="param-val" id="v-angle">25</span></div>
+        <div class="param-row"><label>Length ratio</label><input type="range" id="p-ratio" min="30" max="95" value="68"><span class="param-val" id="v-ratio">0.68</span></div>
+        <div class="param-row"><label>Trunk length</label><input type="range" id="p-trunk" min="10" max="80" value="40"><span class="param-val" id="v-trunk">0.40</span></div>
+        <div class="param-row"><label>Wind</label><button id="btn-wind" style="background:rgba(108,99,255,.2);border:1px solid rgba(108,99,255,.4);color:var(--accent1);border-radius:8px;padding:6px 18px;cursor:pointer;font-weight:700;font-size:.82rem">ON</button></div>
+      </div>
+      <div style="margin-top:18px;font-size:.78rem;color:var(--muted)">✦ Branch colours: <span style="color:#8b4513">■ brown (trunk)</span> → <span style="color:#4ade80">■ green (leaves)</span></div>
+    </div>
+    <div style="border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:0 0 60px rgba(108,99,255,.2)">
+      <canvas id="live-canvas" width="480" height="520"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3 — ARCHITECTURE -->
+<div class="slide" id="slide-3">
+  <div class="slide-tag">📐 Architecture</div>
+  <div class="slide-title" style="text-align:center;margin-bottom:32px">How the code is structured</div>
+  <div class="three-col" style="max-width:1100px">
+    <div class="card">
+      <div class="card-icon">🧱</div>
+      <div class="card-title">MatrixStack</div>
+      <div class="card-body">A LIFO stack of 4×4 matrices. Replaces OpenGL's deprecated <code style="color:var(--accent2)">glPushMatrix</code> / <code style="color:var(--accent2)">glPopMatrix</code>. All transforms are right-multiplied into the top matrix.</div>
+      <div style="margin-top:14px"><span class="pill pill-purple">push()</span><span class="pill pill-purple">pop()</span><span class="pill pill-purple">apply()</span></div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🌿</div>
+      <div class="card-title">FractalTree</div>
+      <div class="card-body">Owns the MatrixStack and all visual parameters. The <code style="color:var(--accent2)">_recurse()</code> method is the heart — it draws one branch, then recursively spawns a left and right child using push/pop.</div>
+      <div style="margin-top:14px"><span class="pill pill-teal">depth</span><span class="pill pill-teal">angle</span><span class="pill pill-teal">wind_sway()</span></div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🖥️</div>
+      <div class="card-title">App</div>
+      <div class="card-body">Bootstraps pygame + OpenGL, runs the 60-fps game loop, handles keyboard input and renders an on-screen HUD using pygame surfaces blitted as OpenGL textures.</div>
+      <div style="margin-top:14px"><span class="pill pill-yellow">run()</span><span class="pill pill-yellow">_draw_hud()</span><span class="pill pill-yellow">_handle_events()</span></div>
+    </div>
+  </div>
+  <div style="margin-top:28px;display:flex;gap:14px;align-items:center;font-size:.8rem;color:var(--muted)">
+    <span class="pill pill-green">354 lines total</span>
+    <span class="pill pill-green">3 classes</span>
+    <span class="pill pill-green">~15 methods</span>
+    <span class="pill pill-green">1 recursive function</span>
+  </div>
+</div>
+
+<!-- SLIDE 4 — MatrixStack -->
+<div class="slide" id="slide-4">
+  <div class="two-col" style="max-width:1280px;align-items:start">
+    <div>
+      <div class="slide-tag">🧱 Class #1</div>
+      <div class="slide-title" style="font-size:clamp(1.6rem,3vw,2.6rem)">MatrixStack</div>
+      <p style="color:var(--muted);margin-top:10px;font-size:.88rem;line-height:1.7">Classic push/pop pattern: each recursive call <em>pushes</em> a copy of the current transform, applies local changes, then <em>pops</em> to restore the parent's state.</p>
+      <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px">
+        <div class="card" style="padding:16px 20px">
+          <div class="section-label">push()</div>
+          <div style="font-size:.83rem;color:var(--muted)">Deep-copies the top matrix. Any subsequent transforms only affect this copy, not the parent.</div>
+        </div>
+        <div class="card" style="padding:16px 20px">
+          <div class="section-label">pop()</div>
+          <div style="font-size:.83rem;color:var(--muted)">Discards the top matrix, restoring the parent transform. Raises <code style="color:var(--accent3)">RuntimeError</code> on underflow.</div>
+        </div>
+        <div class="card" style="padding:16px 20px">
+          <div class="section-label">apply()</div>
+          <div style="font-size:.83rem;color:var(--muted)">Calls <code style="color:var(--accent2)">glLoadMatrixf(top.T)</code>. The <code>.T</code> transpose converts row-major NumPy to OpenGL's column-major format.</div>
+        </div>
+        <div class="card" style="padding:16px 20px">
+          <div class="section-label">translate / rotate_z / scale</div>
+          <div style="font-size:.83rem;color:var(--muted)">Build a 4×4 transform and right-multiply: <code style="color:var(--accent2)">top = top @ T</code>. This chains transforms correctly.</div>
+        </div>
+      </div>
+    </div>
+    <div class="code-block">
+<pre><span class="kw">class</span> <span class="cls">MatrixStack</span>:
+    <span class="str">"""LIFO stack of 4×4 column-major matrices."""</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="self-kw">self</span>):
+        <span class="self-kw">self</span>._stack <span class="op">=</span> [np.eye(<span class="num">4</span>, dtype<span class="op">=</span>np.float32)]
+        <span class="cmt"># start with one identity matrix</span>
+
+    <span class="kw">def</span> <span class="fn">push</span>(<span class="self-kw">self</span>):
+        <span class="self-kw">self</span>._stack.append(
+            <span class="self-kw">self</span>._stack[<span class="op">-</span><span class="num">1</span>].copy()  <span class="cmt"># deep-copy!</span>
+        )
+
+    <span class="kw">def</span> <span class="fn">pop</span>(<span class="self-kw">self</span>):
+        <span class="kw">if</span> len(<span class="self-kw">self</span>._stack) <span class="op">&lt;=</span> <span class="num">1</span>:
+            <span class="kw">raise</span> <span class="cls">RuntimeError</span>(<span class="str">"underflow"</span>)
+        <span class="self-kw">self</span>._stack.pop()
+
+    <span class="kw">def</span> <span class="fn">translate</span>(<span class="self-kw">self</span>, <span class="param">tx</span>, <span class="param">ty</span>, <span class="param">tz</span><span class="op">=</span><span class="num">0.0</span>):
+        T <span class="op">=</span> np.eye(<span class="num">4</span>, dtype<span class="op">=</span>np.float32)
+        T[<span class="num">0</span>, <span class="num">3</span>] <span class="op">=</span> tx
+        T[<span class="num">1</span>, <span class="num">3</span>] <span class="op">=</span> ty
+        <span class="self-kw">self</span>._stack[<span class="op">-</span><span class="num">1</span>] <span class="op">=</span> <span class="self-kw">self</span>._stack[<span class="op">-</span><span class="num">1</span>] <span class="op">@</span> T
+
+    <span class="kw">def</span> <span class="fn">rotate_z</span>(<span class="self-kw">self</span>, <span class="param">angle_deg</span>):
+        a <span class="op">=</span> math.radians(angle_deg)
+        c, s <span class="op">=</span> math.cos(a), math.sin(a)
+        R <span class="op">=</span> np.array([
+            [ c, <span class="op">-</span>s, <span class="num">0</span>, <span class="num">0</span>],
+            [ s,  c, <span class="num">0</span>, <span class="num">0</span>],
+            [ <span class="num">0</span>,  <span class="num">0</span>, <span class="num">1</span>, <span class="num">0</span>],
+            [ <span class="num">0</span>,  <span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>],
+        ], dtype<span class="op">=</span>np.float32)
+        <span class="self-kw">self</span>._stack[<span class="op">-</span><span class="num">1</span>] <span class="op">=</span> <span class="self-kw">self</span>._stack[<span class="op">-</span><span class="num">1</span>] <span class="op">@</span> R
+
+    <span class="kw">def</span> <span class="fn">scale</span>(<span class="self-kw">self</span>, <span class="param">sx</span>, <span class="param">sy</span>, <span class="param">sz</span><span class="op">=</span><span class="num">1.0</span>):
+        S <span class="op">=</span> np.diag([sx, sy, sz, <span class="num">1.0</span>]).astype(np.float32)
+        <span class="self-kw">self</span>._stack[<span class="op">-</span><span class="num">1</span>] <span class="op">=</span> <span class="self-kw">self</span>._stack[<span class="op">-</span><span class="num">1</span>] <span class="op">@</span> S
+
+    <span class="kw">def</span> <span class="fn">apply</span>(<span class="self-kw">self</span>):
+        <span class="cmt"># .T: row-major NumPy → column-major OpenGL</span>
+        glLoadMatrixf(<span class="self-kw">self</span>.top.T)</pre>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5 — _recurse() -->
+<div class="slide" id="slide-5">
+  <div class="two-col" style="max-width:1280px;align-items:start">
+    <div class="code-block">
+<pre><span class="kw">def</span> <span class="fn">_recurse</span>(<span class="self-kw">self</span>, <span class="param">length</span>, <span class="param">depth</span>):
+    <span class="cmt"># ① Base case — stop recursion</span>
+    <span class="kw">if</span> depth <span class="op">==</span> <span class="num">0</span> <span class="kw">or</span> length <span class="op">&lt;</span> <span class="num">0.002</span>:
+        <span class="kw">return</span>
+
+    <span class="cmt"># ② Visual properties for this depth level</span>
+    color <span class="op">=</span> <span class="self-kw">self</span>._branch_color(
+        <span class="self-kw">self</span>.depth <span class="op">-</span> depth, <span class="self-kw">self</span>.depth)
+    width <span class="op">=</span> <span class="self-kw">self</span>._branch_width(
+        <span class="self-kw">self</span>.depth <span class="op">-</span> depth, <span class="self-kw">self</span>.depth)
+    glColor3f(<span class="op">*</span>color)
+    glLineWidth(width)
+
+    <span class="cmt"># ③ Sync the matrix stack to OpenGL</span>
+    <span class="self-kw">self</span>._stack.apply()
+
+    <span class="cmt"># ④ Draw segment: (0,0) → (0, length)</span>
+    <span class="self-kw">self</span>._draw_segment(length)
+
+    <span class="cmt"># ⑤ Move origin to the TIP of this branch</span>
+    <span class="self-kw">self</span>._stack.push()
+    <span class="self-kw">self</span>._stack.translate(<span class="num">0.0</span>, length)
+
+    sway <span class="op">=</span> <span class="self-kw">self</span>._wind_sway(
+        <span class="self-kw">self</span>.depth <span class="op">-</span> depth <span class="op">+</span> <span class="num">1</span>)
+
+    <span class="cmt"># ⑥ Left child</span>
+    <span class="self-kw">self</span>._stack.push()
+    <span class="self-kw">self</span>._stack.rotate_z(<span class="self-kw">self</span>.angle <span class="op">+</span> sway)
+    <span class="self-kw">self</span>._recurse(length <span class="op">*</span> <span class="self-kw">self</span>.length_ratio, depth<span class="op">-</span><span class="num">1</span>)
+    <span class="self-kw">self</span>._stack.pop()   <span class="cmt"># restore to tip</span>
+
+    <span class="cmt"># ⑦ Right child</span>
+    <span class="self-kw">self</span>._stack.push()
+    <span class="self-kw">self</span>._stack.rotate_z(
+        <span class="op">-</span>(<span class="self-kw">self</span>.angle <span class="op">+</span> sway <span class="op">*</span> <span class="num">0.7</span>))
+    <span class="self-kw">self</span>._recurse(length <span class="op">*</span> <span class="self-kw">self</span>.length_ratio, depth<span class="op">-</span><span class="num">1</span>)
+    <span class="self-kw">self</span>._stack.pop()   <span class="cmt"># restore to tip</span>
+
+    <span class="self-kw">self</span>._stack.pop()   <span class="cmt"># restore to branch base</span></pre>
+    </div>
+    <div>
+      <div class="slide-tag">🌿 Core Algorithm</div>
+      <div class="slide-title" style="font-size:clamp(1.6rem,3vw,2.4rem)">_recurse( )</div>
+      <p style="color:var(--muted);margin-top:10px;font-size:.88rem;line-height:1.7">This single method generates the entire tree. Every call draws <em>one segment</em>, then spawns two children at a rotated angle.</p>
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:12px">
+        <div class="card" style="padding:14px 18px;border-left:3px solid var(--accent3)">
+          <div class="section-label" style="color:var(--accent3)">① Base case</div>
+          <div style="font-size:.82rem;color:var(--muted)">Stop when <code>depth == 0</code> or the branch is tiny (&lt; 0.002 world units).</div>
+        </div>
+        <div class="card" style="padding:14px 18px;border-left:3px solid var(--accent4)">
+          <div class="section-label" style="color:var(--accent4)">② Colour + width</div>
+          <div style="font-size:.82rem;color:var(--muted)">Interpolate from brown→green and 6px→1px based on depth index.</div>
+        </div>
+        <div class="card" style="padding:14px 18px;border-left:3px solid var(--accent1)">
+          <div class="section-label" style="color:var(--accent1)">③ Translate to tip</div>
+          <div style="font-size:.82rem;color:var(--muted)"><strong>push</strong> + <code>translate(0, length)</code> moves the origin to where the next branch starts.</div>
+        </div>
+        <div class="card" style="padding:14px 18px;border-left:3px solid var(--accent2)">
+          <div class="section-label" style="color:var(--accent2)">④ Left + Right children</div>
+          <div style="font-size:.82rem;color:var(--muted)">Each child: <strong>push → rotate → recurse → pop</strong>. Left = <code>+angle</code>, Right = <code>−angle</code>. Wind adds a sinusoidal offset.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6 — RECURSION VIZ -->
+<div class="slide" id="slide-6">
+  <div class="two-col" style="max-width:1280px;align-items:center">
+    <div>
+      <div class="slide-tag">🔁 Recursion</div>
+      <div class="slide-title" style="font-size:clamp(1.6rem,3vw,2.4rem)">Building depth-first</div>
+      <p style="color:var(--muted);margin-top:10px;font-size:.88rem;line-height:1.7">The tree is drawn <strong>depth-first</strong>. The left subtree is fully drawn before the right child is even started.</p>
+      <div style="margin-top:20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div class="flow-step" style="border-color:var(--accent1)">draw()</div>
+        <div style="color:var(--muted);font-size:1.2rem">→</div>
+        <div class="flow-step">_recurse<br>(depth=8)</div>
+        <div style="color:var(--muted);font-size:1.2rem">→</div>
+        <div class="flow-step">push<br>rotate +25°<br>_recurse(7)</div>
+        <div style="color:var(--muted);font-size:1.2rem">→</div>
+        <div class="flow-step">…</div>
+      </div>
+      <div style="margin-top:20px;font-size:.82rem;color:var(--muted);line-height:1.8">
+        At depth=8, up to <span class="em">2⁸ = 256 leaf segments</span>.<br>
+        Total segments = <span class="em">2⁹ − 1 = 511</span> for a full tree.<br><br>
+        Each level: length shrinks by ×0.68.<br>
+        After 8 levels: <code style="color:var(--accent2)">0.40 × 0.68⁸ ≈ 0.019</code> units.
+      </div>
+      <div style="margin-top:16px;font-size:.8rem;color:var(--muted)">Max stack depth ≈ <code style="color:var(--accent2)">2 × recursion_depth</code></div>
+    </div>
+    <div>
+      <canvas id="rec-canvas" width="480" height="480" style="display:block;border-radius:12px;border:1px solid var(--border)"></canvas>
+      <div style="text-align:center;margin-top:10px;font-size:.78rem;color:var(--muted)">Step-by-step build — depth 1 → 8</div>
+      <div style="display:flex;justify-content:center;gap:10px;margin-top:10px">
+        <button id="btn-step-prev" style="background:var(--card);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.8rem">◀ prev</button>
+        <button id="btn-step-play" style="background:rgba(0,212,170,.1);border:1px solid var(--accent2);color:var(--accent2);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.8rem">▶ auto-play</button>
+        <button id="btn-step-next" style="background:var(--card);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.8rem">next ▶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7 — COLOURS & WIND -->
+<div class="slide" id="slide-7">
+  <div class="two-col" style="max-width:1280px;align-items:start">
+    <div>
+      <div class="slide-tag">🎨 Visual Detail</div>
+      <div class="slide-title" style="font-size:clamp(1.6rem,3vw,2.4rem)">Colour gradient &amp; Wind sway</div>
+      <div style="margin-top:20px">
+        <div class="section-label">Branch colour interpolation</div>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.7;margin-bottom:10px"><code style="color:var(--accent2)">_branch_color(depth, max_depth)</code> linearly interpolates as <code>t = depth/max_depth</code> goes 0→1:</p>
+        <div class="card" style="padding:14px 20px">
+<pre style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted)"><span class="cmt"># trunk (t=0)  →  leaves (t=1)</span>
+r <span class="op">=</span> <span class="num">0.55</span> <span class="op">+</span> t <span class="op">*</span> (<span class="num">0.18</span> <span class="op">-</span> <span class="num">0.55</span>)   <span class="cmt"># 0.55 → 0.18</span>
+g <span class="op">=</span> <span class="num">0.27</span> <span class="op">+</span> t <span class="op">*</span> (<span class="num">0.80</span> <span class="op">-</span> <span class="num">0.27</span>)   <span class="cmt"># 0.27 → 0.80</span>
+b <span class="op">=</span> <span class="num">0.07</span> <span class="op">+</span> t <span class="op">*</span> (<span class="num">0.25</span> <span class="op">-</span> <span class="num">0.07</span>)   <span class="cmt"># 0.07 → 0.25</span></pre>
+        </div>
+        <div class="swatch-row">
+          <div class="swatch" style="background:rgb(140,69,18)"></div>
+          <div class="swatch" style="background:rgb(121,78,30)"></div>
+          <div class="swatch" style="background:rgb(98,97,45)"></div>
+          <div class="swatch" style="background:rgb(75,120,58)"></div>
+          <div class="swatch" style="background:rgb(52,152,72)"></div>
+          <div class="swatch" style="background:rgb(46,182,74)"></div>
+          <div class="swatch" style="background:rgb(46,204,64)"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:4px"><span>Trunk (t=0)</span><span>Leaves (t=1)</span></div>
+      </div>
+      <div style="margin-top:24px">
+        <div class="section-label">Line width taper</div>
+        <div class="card" style="padding:14px 20px">
+<pre style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted)"><span class="cmt"># 6px at trunk, 1px at tips</span>
+width <span class="op">=</span> max(<span class="num">1.0</span>, <span class="num">6.0</span> <span class="op">*</span> (<span class="num">1.0</span> <span class="op">-</span> t))</pre>
+        </div>
+      </div>
+      <div style="margin-top:24px">
+        <div class="section-label">Wind sway — sinusoidal oscillation</div>
+        <div class="card" style="padding:14px 20px">
+<pre style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted)">freq  <span class="op">=</span> <span class="num">0.8</span> <span class="op">+</span> depth <span class="op">*</span> <span class="num">0.15</span>  <span class="cmt"># higher branches: faster</span>
+amp   <span class="op">=</span> <span class="num">1.0</span> <span class="op">+</span> depth <span class="op">*</span> <span class="num">0.5</span>   <span class="cmt"># higher branches: wider</span>
+phase <span class="op">=</span> depth <span class="op">*</span> <span class="num">0.4</span>          <span class="cmt"># each level slightly offset</span>
+sway  <span class="op">=</span> amp <span class="op">*</span> sin(t<span class="op">*</span>freq <span class="op">+</span> phase)</pre>
+        </div>
+        <p style="font-size:.8rem;color:var(--muted);margin-top:8px;line-height:1.6">Sway is added to the left child angle and ×0.7 for the right child, creating an asymmetric, natural oscillation.</p>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <canvas id="color-demo-canvas" width="460" height="290" style="border-radius:12px;border:1px solid var(--border)"></canvas>
+      <canvas id="wind-demo-canvas" width="460" height="210" style="border-radius:12px;border:1px solid var(--border)"></canvas>
+      <div style="text-align:center;font-size:.78rem;color:var(--muted)">Top: colour gradient preview · Bottom: wind sway per depth over time</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8 — APP CLASS -->
+<div class="slide" id="slide-8">
+  <div class="two-col" style="max-width:1280px;align-items:start">
+    <div>
+      <div class="slide-tag">🖥️ Class #3</div>
+      <div class="slide-title" style="font-size:clamp(1.6rem,3vw,2.4rem)">App &amp; the Game Loop</div>
+      <p style="color:var(--muted);margin-top:10px;font-size:.88rem;line-height:1.7"><code style="color:var(--accent2)">App</code> wires everything together. It initialises pygame and OpenGL, sets up an orthographic projection, then runs a fixed-60-fps loop.</p>
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px">
+        <div class="card" style="padding:14px 18px">
+          <div class="section-label">_setup_gl()</div>
+          <ul class="bullet-list" style="font-size:.82rem">
+            <li>Dark background: <code style="color:var(--accent2)">glClearColor(0.06, 0.06, 0.10)</code></li>
+            <li>Anti-aliased lines: <code style="color:var(--accent2)">GL_LINE_SMOOTH</code></li>
+            <li>Alpha blending for transparency effects</li>
+            <li>Orthographic projection: world coords <code>[-1,1]²</code></li>
+          </ul>
+        </div>
+        <div class="card" style="padding:14px 18px">
+          <div class="section-label">run() — main loop</div>
+          <ul class="bullet-list" style="font-size:.82rem">
+            <li><span class="em">dt</span> = elapsed ms / 1000 → smooth animation at any FPS</li>
+            <li>handle events → update(dt) → clear → draw → flip</li>
+          </ul>
+        </div>
+        <div class="card" style="padding:14px 18px">
+          <div class="section-label">_draw_hud() — text overlay trick</div>
+          <ul class="bullet-list" style="font-size:.82rem">
+            <li>Switches to pixel-space ortho projection temporarily</li>
+            <li>Renders text with <strong>pygame fonts</strong> to surfaces</li>
+            <li>Uploads each surface as a <strong>GL texture quad</strong></li>
+            <li>Deletes textures after each frame to avoid VRAM leaks</li>
+          </ul>
+        </div>
+        <div class="card" style="padding:14px 18px">
+          <div class="section-label">_handle_events()</div>
+          <ul class="bullet-list" style="font-size:.82rem">
+            <li>UP/DOWN → depth ±1 (1–12) · LEFT/RIGHT → angle ±1°</li>
+            <li>W/S → ratio · A/D → trunk · SPACE → wind · R → reset</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="code-block">
+<pre><span class="kw">def</span> <span class="fn">run</span>(<span class="self-kw">self</span>):
+    running <span class="op">=</span> <span class="kw">True</span>
+    <span class="kw">while</span> running:
+        <span class="cmt"># ① delta-time in seconds</span>
+        dt <span class="op">=</span> <span class="self-kw">self</span>.clock.tick(<span class="num">60</span>) <span class="op">/</span> <span class="num">1000.0</span>
+        <span class="cmt"># ② input</span>
+        running <span class="op">=</span> <span class="self-kw">self</span>._handle_events()
+        <span class="cmt"># ③ physics / animation</span>
+        <span class="self-kw">self</span>.tree.update(dt)
+        <span class="cmt"># ④ render</span>
+        glClear(GL_COLOR_BUFFER_BIT)
+        <span class="self-kw">self</span>.tree.draw()
+        <span class="self-kw">self</span>._draw_hud()
+        <span class="cmt"># ⑤ present</span>
+        pygame.display.flip()
+    pygame.quit(); sys.exit()
+
+<span class="cmt">---</span>
+
+<span class="kw">def</span> <span class="fn">_draw_hud</span>(<span class="self-kw">self</span>):
+    <span class="cmt"># Switch to pixel-space coords</span>
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix(); glLoadIdentity()
+    glOrtho(<span class="num">0</span>, <span class="self-kw">self</span>.WIDTH, <span class="num">0</span>, <span class="self-kw">self</span>.HEIGHT, <span class="op">-</span><span class="num">1</span>, <span class="num">1</span>)
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix(); glLoadIdentity()
+
+    <span class="kw">for</span> i, line <span class="kw">in</span> enumerate(lines):
+        surf <span class="op">=</span> <span class="self-kw">self</span>._font.render(line, <span class="kw">True</span>, (<span class="num">200</span>,<span class="num">230</span>,<span class="num">200</span>))
+        tex_data <span class="op">=</span> pygame.image.tostring(surf, <span class="str">"RGBA"</span>, <span class="kw">True</span>)
+        tex_id <span class="op">=</span> glGenTextures(<span class="num">1</span>)
+        glBindTexture(GL_TEXTURE_2D, tex_id)
+        glTexImage2D(...)
+        <span class="cmt"># draw textured quad at screen position</span>
+        glBegin(GL_QUADS); ...; glEnd()
+        glDeleteTextures(<span class="num">1</span>, [tex_id])  <span class="cmt"># clean up!</span>
+
+    <span class="cmt"># Restore 3-D projection</span>
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
+    glPopMatrix()</pre>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9 — KEY CONCEPTS -->
+<div class="slide" id="slide-9">
+  <div class="slide-tag">💡 Key Concepts</div>
+  <div class="slide-title" style="text-align:center;margin-bottom:32px">What makes this code tick</div>
+  <div class="three-col" style="max-width:1200px">
+    <div class="card">
+      <div class="card-icon">📚</div>
+      <div class="card-title">Matrix Stack Pattern</div>
+      <div class="card-body">The push/pop pattern is the standard way to handle hierarchical transforms in CG. Each tree node inherits its parent's transform and adds its own local rotation/translation.</div>
+      <div style="margin-top:12px;font-family:var(--font-mono);font-size:.78rem;color:var(--accent2)">push → transform → draw → recurse → pop</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔁</div>
+      <div class="card-title">Structural Recursion</div>
+      <div class="card-body"><em>Divide</em>: one call handles one branch. <em>Conquer</em>: two recursive calls handle the subtrees. <em>Base case</em>: stop at depth 0. The call-tree is a perfect binary tree of depth N.</div>
+      <div style="margin-top:12px;font-family:var(--font-mono);font-size:.78rem;color:var(--accent2)">T(n) = 2T(n−1) + O(1)</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎥</div>
+      <div class="card-title">Real-time Animation</div>
+      <div class="card-body">Delta-time (<code>dt</code>) decouples animation speed from frame rate. The wind sway uses sinusoidal functions with per-level frequency and amplitude, creating organic, layered motion.</div>
+      <div style="margin-top:12px;font-family:var(--font-mono);font-size:.78rem;color:var(--accent2)">sway = amp × sin(t × freq + phase)</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎨</div>
+      <div class="card-title">Procedural Aesthetics</div>
+      <div class="card-body">Colour and line width are computed from depth — no manual colour-picking. Linear interpolation gives a smooth gradient from woody brown trunk to leafy green tips.</div>
+      <div style="margin-top:12px;font-family:var(--font-mono);font-size:.78rem;color:var(--accent2)">color = lerp(trunk_color, leaf_color, t)</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔢</div>
+      <div class="card-title">Column-major Matrices</div>
+      <div class="card-body">OpenGL stores matrices column-by-column. NumPy is row-major, so <code>.T</code> (transpose) is called before <code>glLoadMatrixf()</code> to ensure correct memory layout.</div>
+      <div style="margin-top:12px;font-family:var(--font-mono);font-size:.78rem;color:var(--accent2)">glLoadMatrixf(self.top.T)</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🖼️</div>
+      <div class="card-title">HUD via GL Textures</div>
+      <div class="card-body">Text can't be drawn natively in OpenGL. Fix: render pygame font surfaces to pixel data, upload as <code>GL_TEXTURE_2D</code>, draw a textured quad, then delete each frame.</div>
+      <div style="margin-top:12px;font-family:var(--font-mono);font-size:.78rem;color:var(--accent2)">glGenTextures → glTexImage2D → glDeleteTextures</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10 — CONTROLS & OUTRO -->
+<div class="slide" id="slide-10">
+  <div class="two-col" style="max-width:1200px;align-items:center">
+    <div>
+      <div class="slide-tag">🎮 Controls &amp; Summary</div>
+      <div class="slide-title" style="font-size:clamp(1.6rem,3vw,2.4rem)">Running the program</div>
+      <p style="color:var(--muted);font-size:.88rem;margin-top:12px;line-height:1.7">Install dependencies, then run the file. Every parameter is live-editable.</p>
+      <div class="card" style="margin-top:20px;padding:18px 22px">
+        <div class="section-label">Install</div>
+        <pre style="font-family:var(--font-mono);font-size:.82rem;color:var(--accent2);margin-top:6px">pip install pygame PyOpenGL numpy</pre>
+      </div>
+      <div class="card" style="margin-top:10px;padding:18px 22px">
+        <div class="section-label">Run</div>
+        <pre style="font-family:var(--font-mono);font-size:.82rem;color:var(--accent2);margin-top:6px">python fractal_tree.py</pre>
+      </div>
+      <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="card" style="padding:12px 16px"><div style="font-family:var(--font-mono);font-size:.85rem;color:var(--accent4);margin-bottom:6px">↑ / ↓</div><div style="font-size:.78rem;color:var(--muted)">Recursion depth (1–12)</div></div>
+        <div class="card" style="padding:12px 16px"><div style="font-family:var(--font-mono);font-size:.85rem;color:var(--accent4);margin-bottom:6px">← / →</div><div style="font-size:.78rem;color:var(--muted)">Branch angle (1–89°)</div></div>
+        <div class="card" style="padding:12px 16px"><div style="font-family:var(--font-mono);font-size:.85rem;color:var(--accent4);margin-bottom:6px">W / S</div><div style="font-size:.78rem;color:var(--muted)">Length ratio (0.30–0.95)</div></div>
+        <div class="card" style="padding:12px 16px"><div style="font-family:var(--font-mono);font-size:.85rem;color:var(--accent4);margin-bottom:6px">A / D</div><div style="font-size:.78rem;color:var(--muted)">Trunk length (0.10–0.80)</div></div>
+        <div class="card" style="padding:12px 16px"><div style="font-family:var(--font-mono);font-size:.85rem;color:var(--accent4);margin-bottom:6px">SPACE</div><div style="font-size:.78rem;color:var(--muted)">Toggle wind animation</div></div>
+        <div class="card" style="padding:12px 16px"><div style="font-family:var(--font-mono);font-size:.85rem;color:var(--accent4);margin-bottom:6px">R / ESC</div><div style="font-size:.78rem;color:var(--muted)">Reset / Quit</div></div>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <canvas id="outro-canvas" width="420" height="460" style="border-radius:16px;border:1px solid var(--border);box-shadow:0 0 80px rgba(0,212,170,.2);display:block"></canvas>
+      <div style="margin-top:20px">
+        <div style="font-size:1.6rem;font-weight:800;background:linear-gradient(135deg,var(--accent1),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">That's a wrap!</div>
+        <div style="color:var(--muted);font-size:.85rem;margin-top:8px">354 lines · 3 classes · infinite beauty</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end slider-track -->
+
+<nav id="nav">
+  <button class="nav-btn" id="btn-prev">&#8592;</button>
+  <div id="dots"></div>
+  <div id="slide-counter">01 / 10</div>
+  <button class="nav-btn" id="btn-next">&#8594;</button>
+</nav>
+
+<script>
+// =====================================================================
+// SLIDER
+// =====================================================================
+const TOTAL = 10;
+let current = 0;
+const track   = document.getElementById('slider-track');
+const badge   = document.getElementById('slide-badge');
+const counter = document.getElementById('slide-counter');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const dotsEl  = document.getElementById('dots');
+const progress= document.getElementById('progress-bar');
+
+track.style.width = `${TOTAL * 100}vw`;
+
+for(let i=0;i<TOTAL;i++){
+  const d=document.createElement('div');
+  d.className='dot'+(i===0?' active':'');
+  d.addEventListener('click',()=>goTo(i));
+  dotsEl.appendChild(d);
+}
+
+function goTo(n){
+  current=Math.max(0,Math.min(TOTAL-1,n));
+  track.style.transform=`translateX(${-current*100}vw)`;
+  const label=`${String(current+1).padStart(2,'0')} / ${TOTAL}`;
+  badge.textContent=label;
+  counter.textContent=label;
+  btnPrev.disabled=current===0;
+  btnNext.disabled=current===TOTAL-1;
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===current));
+  progress.style.width=`${((current+1)/TOTAL)*100}%`;
+  onSlideEnter(current);
+}
+
+btnPrev.addEventListener('click',()=>goTo(current-1));
+btnNext.addEventListener('click',()=>goTo(current+1));
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();goTo(current+1)}
+  if(e.key==='ArrowLeft' ||e.key==='ArrowUp')  {e.preventDefault();goTo(current-1)}
+});
+let tx=0;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
+document.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx;
+  if(dx<-50)goTo(current+1);
+  if(dx> 50)goTo(current-1);
+},{passive:true});
+
+// =====================================================================
+// TREE RENDERING (Canvas 2D)
+// =====================================================================
+function branchColor(idx,maxDepth){
+  const t=maxDepth>0?idx/maxDepth:0;
+  return `rgb(${Math.round((0.55+t*(0.18-0.55))*255)},${Math.round((0.27+t*(0.80-0.27))*255)},${Math.round((0.07+t*(0.25-0.07))*255)})`;
+}
+function branchWidth(idx,maxDepth){
+  const t=maxDepth>0?idx/maxDepth:0;
+  return Math.max(1,6*(1-t));
+}
+
+function drawBranch(ctx,x,y,len,ang,rem,maxDepth,angle,ratio,windTime,windOn){
+  if(rem===0||len<0.5)return;
+  const idx=maxDepth-rem;
+  const sway=windOn?(1+idx*0.5)*Math.sin(windTime*(0.8+idx*0.15)+idx*0.4):0;
+  const ex=x+len*Math.sin(ang*Math.PI/180);
+  const ey=y-len*Math.cos(ang*Math.PI/180);
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);
+  ctx.strokeStyle=branchColor(idx,maxDepth);
+  ctx.lineWidth=branchWidth(idx,maxDepth);
+  ctx.stroke();
+  const la=ang+(angle+sway), ra=ang-(angle+sway*0.7);
+  drawBranch(ctx,ex,ey,len*ratio,la,rem-1,maxDepth,angle,ratio,windTime,windOn);
+  drawBranch(ctx,ex,ey,len*ratio,ra,rem-1,maxDepth,angle,ratio,windTime,windOn);
+}
+
+function clearAndDraw(ctx,canvas,cx,cy,trunkPx,depth,angle,ratio,windTime,windOn){
+  ctx.fillStyle='#060610';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.lineJoin='round';ctx.lineCap='round';
+  drawBranch(ctx,cx,cy,trunkPx,0,depth,depth,angle,ratio,windTime,windOn);
+}
+
+// =====================================================================
+// SLIDE 1 — Hero
+// =====================================================================
+const heroCanvas=document.getElementById('hero-canvas');
+const heroCtx=heroCanvas.getContext('2d');
+let heroT=0;
+function resizeHero(){heroCanvas.width=window.innerWidth;heroCanvas.height=window.innerHeight}
+resizeHero();window.addEventListener('resize',resizeHero);
+(function heroLoop(){
+  heroT+=0.008;
+  heroCtx.clearRect(0,0,heroCanvas.width,heroCanvas.height);
+  clearAndDraw(heroCtx,heroCanvas,heroCanvas.width/2,heroCanvas.height*0.98,
+    heroCanvas.height*0.22,9,25+Math.sin(heroT*0.4)*3,0.68,heroT,true);
+  requestAnimationFrame(heroLoop);
+})();
+
+// =====================================================================
+// SLIDE 2 — Live interactive
+// =====================================================================
+const liveCanvas=document.getElementById('live-canvas');
+const liveCtx=liveCanvas.getContext('2d');
+let liveP={depth:8,angle:25,ratio:0.68,trunk:0.40,wind:true};
+let liveT=0,liveStarted=false;
+
+function bindSlider(id,vid,scale,prop,fmt){
+  const sl=document.getElementById(id),vl=document.getElementById(vid);
+  sl.addEventListener('input',()=>{
+    liveP[prop]=sl.value/scale;
+    vl.textContent=fmt?fmt(sl.value/scale):(sl.value/scale).toFixed(2);
+  });
+}
+bindSlider('p-depth','v-depth',1,'depth',v=>Math.round(v));
+bindSlider('p-angle','v-angle',1,'angle',v=>Math.round(v));
+bindSlider('p-ratio','v-ratio',100,'ratio',v=>v.toFixed(2));
+bindSlider('p-trunk','v-trunk',100,'trunk',v=>v.toFixed(2));
+document.getElementById('btn-wind').addEventListener('click',function(){
+  liveP.wind=!liveP.wind;
+  this.textContent=liveP.wind?'ON':'OFF';
+  this.style.color=liveP.wind?'var(--accent1)':'var(--muted)';
+});
+
+function startLive(){
+  if(liveStarted)return;liveStarted=true;
+  (function liveLoop(){
+    liveT+=0.016;
+    clearAndDraw(liveCtx,liveCanvas,liveCanvas.width/2,liveCanvas.height*0.96,
+      liveCanvas.height*liveP.trunk*0.72,liveP.depth,liveP.angle,liveP.ratio,liveT,liveP.wind);
+    requestAnimationFrame(liveLoop);
+  })();
+}
+
+// =====================================================================
+// SLIDE 6 — Step recursion
+// =====================================================================
+const recCanvas=document.getElementById('rec-canvas');
+const recCtx=recCanvas.getContext('2d');
+let recDepth=1,recAutoId=null,recAutoOn=false;
+
+function drawRec(){
+  recCtx.fillStyle='#060610';recCtx.fillRect(0,0,recCanvas.width,recCanvas.height);
+  recCtx.fillStyle='rgba(108,99,255,.12)';recCtx.fillRect(0,0,recCanvas.width,26);
+  recCtx.fillStyle='#a89fff';recCtx.font='bold 12px "JetBrains Mono",monospace';
+  recCtx.fillText(`Depth = ${recDepth}   →   ${Math.pow(2,recDepth+1)-1} segments drawn`,10,18);
+  recCtx.lineJoin='round';recCtx.lineCap='round';
+  drawBranch(recCtx,recCanvas.width/2,recCanvas.height*0.96,
+    recCanvas.height*0.25,0,recDepth,8,25,0.68,0,false);
+}
+document.getElementById('btn-step-prev').addEventListener('click',()=>{recDepth=Math.max(1,recDepth-1);drawRec()});
+document.getElementById('btn-step-next').addEventListener('click',()=>{recDepth=Math.min(8,recDepth+1);drawRec()});
+document.getElementById('btn-step-play').addEventListener('click',function(){
+  recAutoOn=!recAutoOn;this.textContent=recAutoOn?'⏸ pause':'▶ auto-play';
+  if(recAutoOn){recAutoId=setInterval(()=>{recDepth=recDepth>=8?1:recDepth+1;drawRec()},900)}
+  else clearInterval(recAutoId);
+});
+
+// =====================================================================
+// SLIDE 7 — Colour + wind graphs
+// =====================================================================
+const colorDemoC=document.getElementById('color-demo-canvas'),colorDemoX=colorDemoC.getContext('2d');
+const windDemoC =document.getElementById('wind-demo-canvas'), windDemoX =windDemoC.getContext('2d');
+let slide7Running=false,animT7=0;
+
+function drawColorDemo(){
+  colorDemoX.fillStyle='#060610';colorDemoX.fillRect(0,0,colorDemoC.width,colorDemoC.height);
+  colorDemoX.lineJoin='round';colorDemoX.lineCap='round';
+  drawBranch(colorDemoX,colorDemoC.width/2,colorDemoC.height*0.97,
+    colorDemoC.height*0.28,0,7,7,25,0.68,0,false);
+  colorDemoX.fillStyle='rgba(0,0,0,.5)';colorDemoX.fillRect(0,0,colorDemoC.width,20);
+  colorDemoX.fillStyle='#7070a0';colorDemoX.font='11px Inter,sans-serif';
+  colorDemoX.fillText('Colour gradient: trunk (brown) → leaves (green)',8,14);
+}
+function drawWindGraph(t){
+  const w=windDemoC.width,h=windDemoC.height;
+  windDemoX.fillStyle='#060610';windDemoX.fillRect(0,0,w,h);
+  windDemoX.fillStyle='rgba(0,0,0,.4)';windDemoX.fillRect(0,0,w,20);
+  windDemoX.fillStyle='#7070a0';windDemoX.font='11px Inter,sans-serif';
+  windDemoX.fillText('Wind sway per depth level over time',8,14);
+  const cols=['#6c63ff','#00d4aa','#ffd93d','#ff6b6b','#4ade80'];
+  for(let d=1;d<=5;d++){
+    windDemoX.beginPath();windDemoX.strokeStyle=cols[d-1];windDemoX.lineWidth=1.5;
+    for(let px=0;px<w;px++){
+      const tt=t-(w-px)*0.035,freq=0.8+d*0.15,amp=1+d*0.5,phase=d*0.4;
+      const v=amp*Math.sin(tt*freq+phase);
+      const py=h/2-v*(h*0.065);
+      if(px===0)windDemoX.moveTo(px,py);else windDemoX.lineTo(px,py);
+    }
+    windDemoX.stroke();
+    windDemoX.fillStyle=cols[d-1];windDemoX.fillRect(8+(d-1)*72,h-16,12,8);
+    windDemoX.fillStyle='#7070a0';windDemoX.font='9px Inter';
+    windDemoX.fillText(`depth ${d}`,24+(d-1)*72,h-9);
+  }
+}
+
+// =====================================================================
+// SLIDE 10 — Outro
+// =====================================================================
+const outroC=document.getElementById('outro-canvas'),outroX=outroC.getContext('2d');
+let outroT=0,slide10Running=false;
+
+function drawOutro(){
+  outroX.fillStyle='#060610';outroX.fillRect(0,0,outroC.width,outroC.height);
+  outroX.lineJoin='round';outroX.lineCap='round';
+  drawBranch(outroX,outroC.width/2,outroC.height*0.97,
+    outroC.height*0.24,0,10,10,25+Math.sin(outroT*0.3)*4,0.68,outroT,true);
+}
+
+// =====================================================================
+// PER-SLIDE ACTIVATION
+// =====================================================================
+function onSlideEnter(n){
+  if(n===1) startLive();
+  if(n===5){recDepth=1;drawRec()}
+  if(n===6 && !slide7Running){
+    slide7Running=true;
+    drawColorDemo();
+    (function loop(){
+      animT7+=0.018;
+      drawWindGraph(animT7);
+      if(current===6){requestAnimationFrame(loop)}else{slide7Running=false}
+    })();
+  }
+  if(n===9 && !slide10Running){
+    slide10Running=true;
+    (function loop(){
+      outroT+=0.016;
+      drawOutro();
+      if(current===9){requestAnimationFrame(loop)}else{slide10Running=false}
+    })();
+  }
+}
+
+// =====================================================================
+// BOOT
+// =====================================================================
+goTo(0);
+drawRec(); // pre-draw so slide 6 looks nice
+</script>
+</body>
+</html>
