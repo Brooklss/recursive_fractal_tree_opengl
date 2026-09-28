@@ -1,0 +1,47 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build fractal_tree (MinGW)",
+      "type": "shell",
+      "command": "C:\\msys64\\usr\\bin\\bash.exe",
+      "args": [
+        "-c",
+        "export PATH=/mingw64/bin:/usr/bin:$PATH; g++ fractal_tree.cpp -o fractal_tree.exe -std=c++17 -O2 -Wall -I/mingw64/include -L/mingw64/lib -lfreeglut -lopengl32 -lglu32 && cp /mingw64/bin/libfreeglut.dll freeglut.dll && echo 'Build succeeded!'"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": {
+        "owner": "cpp",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    },
+    {
+      "label": "Run fractal_tree",
+      "type": "shell",
+      "command": ".\\fractal_tree.exe",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "Build fractal_tree (MinGW)",
+      "group": "test"
+    }
+  ]
+}
